@@ -15,92 +15,7 @@ app.use((req, res) => {
 });
 
 //FUNCTIONS START=============================================================
-//for the veiw all db queries (view all departments/roles/employees)
-const viewAll = (sql) => {
-  db.query(sql, (err, rows) => {
-    if (err) {
-      console.log(err);
-      return;
-    }
-    console.table(rows);
-    init();
-  });
-};
-
-const createDepartment = () => {
-  inquirer.prompt([
-    {
-      type: "input",
-      name: "name",
-      message: "What is the name of the department?",
-    },
-  ]);
-  //then feed into create function (sql, data)
-};
-
-const createRole = () => {
-  //query for department then insert into prompt
-  inquirer.prompt([
-    //name
-    {
-      type: "input",
-      name: "name",
-      message: "What is the name of the role?",
-    },
-    //salary
-    {
-        type: "input",
-        name: "salary",
-        message: "What is the role's salary?",
-    },
-    //department
-    {
-        type: "list",
-        name: "department",
-        message: "What department does this role belong to?",
-        choices: [], //TODO: Add list from query =============================================
-      },
-  ]);
-  //then feed into create function (sql, data)
-};
-
-const createEmployee = () => {
-  //query for role list and manager list
-  //f name
-  inquirer.prompt([
-    {
-      type: "input",
-      name: "first_name",
-      message: "What is the employees first name?",
-    },
-    //l name
-    {
-      type: "input",
-      name: "last_name",
-      message: "What is the employees last name?",
-    },
-    //role
-    {
-      type: "list",
-      name: "role",
-      message: "What is the employee's role?",
-      choices: [], //TODO: Add list from query =============================================
-    },
-    //manager
-    {
-      type: "list",
-      name: "manager",
-      message: "Who is the employee's manager?",
-      choices: [], //TODO: Add list from query and null ===================================
-    },
-  ]);
-  //then feed into create function (sql, data)
-};
-
-const createRows = (sql) => {};
-
-const updateEmployee = () => {};
-
+//TODO: sql statements in case switch
 const init = () => {
   return inquirer
     .prompt([
@@ -123,17 +38,19 @@ const init = () => {
     .then((data) => {
       let sql = {};
       switch (data.first_choice) {
+        //done
         case "View all departments":
           sql = `SELECT * FROM departments ORDER BY name`;
           viewAll(sql);
           break;
         case "View all roles":
+          //TODO: title, id, deparment, salary. Current: deparment_id instead of name
           sql = `SELECT * FROM roles`;
           viewAll(sql);
           break;
         case "View all employees":
-          //id, fn, ln, title (role), department, salary, manager (name, not id) ========================= TODO: sql declaration
-          sql = `SELECT * FROM roles`;
+          //TODO: Show role/manager names instead of ids, show salary and deparment
+          sql = `SELECT * FROM employees`;
           viewAll(sql);
           break;
         case "Add a department":
@@ -153,6 +70,270 @@ const init = () => {
       }
     });
 };
+
+//done
+//for the veiw all db queries (view all departments/roles/employees)
+const viewAll = (sql) => {
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    console.table(rows);
+    init();
+  });
+};
+
+//for the create db queries (create deparment/role/employee)
+const createRows = (sql, params) => {
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      console.log(err.message);
+      return;
+    }
+    console.log("Success!");
+    init();
+  });
+};
+
+//done
+const createDepartment = () => {
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "name",
+        message: "What is the name of the department?",
+        validate: (nameInput) => {
+          if (nameInput) {
+            return true;
+          } else {
+            console.log("Please enter the name of the department.");
+            return false;
+          }
+        },
+      },
+    ])
+    .then((data) => {
+      let sql = `INSERT INTO departments (name)
+        VALUES (?)`;
+      let params = [data.name];
+      createRows(sql, params);
+    });
+};
+
+//done
+const createRole = () => {
+  //query for department then insert into prompt
+  const departmentArray = [];
+
+  let sql = `SELECT * FROM departments`;
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    rows.forEach((department) => {
+      departmentArray.push(department.name);
+    });
+  });
+
+  inquirer
+    .prompt([
+      //name
+      {
+        type: "input",
+        name: "name",
+        message: "What is the name of the role?",
+        validate: (nameInput) => {
+          if (nameInput) {
+            return true;
+          } else {
+            console.log("Please enter the name of the role.");
+            return false;
+          }
+        },
+      },
+      //salary
+      {
+        type: "input",
+        name: "salary",
+        message: "What is the role's salary?",
+        validate: (nameInput) => {
+          if (nameInput) {
+            return true;
+          } else {
+            console.log("Please enter the role's salary.");
+            return false;
+          }
+        },
+      },
+      //department
+      {
+        type: "list",
+        name: "department",
+        message: "What department does this role belong to?",
+        choices: departmentArray,
+      },
+    ])
+    .then((data) => {
+      const deparmentId = departmentArray.indexOf(data.department) + 1;
+      console.log(deparmentId);
+      let sql = `INSERT INTO roles (title, salary, department_id)
+          VALUES (?,?,?)`;
+      let params = [data.name, data.salary, deparmentId];
+      createRows(sql, params);
+    });
+};
+
+//done
+const createEmployee = () => {
+  //query for roles then insert into prompt
+  const roleArray = [];
+  let roleSql = `SELECT * FROM roles`;
+  db.query(roleSql, (err, rows) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    rows.forEach((role) => {
+      roleArray.push(role.title);
+    });
+  });
+
+  //query for employees then insert into prompt
+  const employeeArray = [];
+  let employeeSql = `SELECT * FROM employees`;
+  db.query(employeeSql, (err, rows) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    rows.forEach((employee) => {
+      employeeArray.push(`${employee.first_name} ${employee.last_name}`);
+    });
+  });
+
+  inquirer
+    .prompt([
+      //f name
+      {
+        type: "input",
+        name: "first_name",
+        message: "What is the employee's first name?",
+        validate: (nameInput) => {
+          if (nameInput) {
+            return true;
+          } else {
+            console.log("Please enter the employee's first name.");
+            return false;
+          }
+        },
+      },
+      //l name
+      {
+        type: "input",
+        name: "last_name",
+        message: "What is the employees last name?",
+        validate: (nameInput) => {
+          if (nameInput) {
+            return true;
+          } else {
+            console.log("Please enter the employee's last name.");
+            return false;
+          }
+        },
+      },
+      //role
+      {
+        type: "list",
+        name: "role",
+        message: "What is the employee's role?",
+        choices: roleArray,
+      },
+      //manager
+      {
+        type: "list",
+        name: "manager",
+        message: "Who is the employee's manager?",
+        choices: employeeArray,
+      },
+    ])
+    .then((data) => {
+      const roleId = roleArray.indexOf(data.role) + 1;
+      const managerId = employeeArray.indexOf(data.manager) + 1;
+      let sql = `INSERT INTO employees (first_name, last_name, role_id, manager_id)
+      VALUES (?,?,?,?)`;
+      let params = [data.first_name, data.last_name, roleId, managerId];
+      createRows(sql, params);
+    });
+};
+
+//TODO: the whole thing
+const updateEmployee = () => {
+  //query for employees then insert into prompt
+  const employeeArray = [];
+  let employeeSql = `SELECT * FROM employees`;
+  db.query(employeeSql, (err, rows) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    rows.forEach((employee) => {
+      employeeArray.push(`${employee.first_name} ${employee.last_name}`);
+    })
+    console.log(employeeArray);
+  });
+
+  //query for roles then insert into prompt
+  const roleArray = [];
+  let roleSql = `SELECT * FROM roles`;
+  db.query(roleSql, (err, rows) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    rows.forEach((role) => {
+      roleArray.push(role.title);
+    });
+  });
+
+  inquirer
+    .prompt([
+      {
+        type: "confirm",
+        name: "stall",
+        message: "Do you want to update an employee?",
+      },
+      {
+        type: "list",
+        name: "employee",
+        message: "What employee is getting updated?",
+        choices: employeeArray,
+      },
+      {
+        type: "list",
+        name: "role",
+        message: "What is the employee's new role?",
+        choices: roleArray,
+      },
+      {
+        type: "list",
+        name: "manager",
+        message: "Who is the employee's manager?",
+        choices: employeeArray,
+      },
+    ])
+    .then((data) => {
+      const roleId = roleArray.indexOf(data.role) + 1;
+      const employeeId = employeeArray.indexOf(data.employee) + 1;
+      const managerId = employeeArray.indexOf(data.manager) + 1;
+      let sql = `UPDATE employees SET role_id = ?, manager_id = ? WHERE id = ?`;
+      let params = [roleId, managerId, employeeId];
+      createRows(sql, params);
+    });
+};
+
 //FUNCTIONS END ==============================================================
 
 // start server
