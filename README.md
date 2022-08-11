@@ -20,9 +20,12 @@ To use this program:
 ## Screenshot and Tutorial
 
 ### Application Screenshot
+
 ![Screenshot](/assets/images/screenshot.png)
 
 ### Application Video Tutorial
+
+https://user-images.githubusercontent.com/102071390/184241541-ecf7206f-24f2-4a29-ac27-1dfb25f4eb17.mp4
 
 ## Repo Link
 [GitHub repo](https://github.com/dolcebasstrombone/employee-tracker)
