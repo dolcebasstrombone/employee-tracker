@@ -187,7 +187,6 @@ const createRole = () => {
     ])
     .then((data) => {
       const deparmentId = departmentArray.indexOf(data.department) + 1;
-      console.log(deparmentId);
       let sql = `INSERT INTO roles (title, salary, department_id)
           VALUES (?,?,?)`;
       let params = [data.name, data.salary, deparmentId];
