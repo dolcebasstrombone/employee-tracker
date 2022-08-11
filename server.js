@@ -44,13 +44,21 @@ const init = () => {
           viewAll(sql);
           break;
         case "View all roles":
-          //TODO: title, id, deparment, salary. Current: deparment_id instead of name
-          sql = `SELECT * FROM roles`;
+          sql = `SELECT roles.id, roles.title, roles.salary,
+          departments.name AS department FROM roles
+          LEFT JOIN departments
+          ON roles.department_id = departments.id;`;
           viewAll(sql);
           break;
         case "View all employees":
-          //TODO: Show role/manager names instead of ids, show salary and deparment
-          sql = `SELECT * FROM employees`;
+          sql = `SELECT employees.id, 
+          CONCAT(employees.first_name,' ', employees.last_name) as employee,
+          roles.title AS role, roles.salary AS salary, departments.name AS department,
+          CONCAT(e2.first_name, ' ', e2.last_name) AS manager
+          FROM employees
+          LEFT JOIN roles ON employees.role_id = roles.id
+          LEFT JOIN departments ON roles.department_id = departments.id
+          LEFT JOIN employees e2 ON employees.manager_id = e2.id`;
           viewAll(sql);
           break;
         case "Add a department":
@@ -84,7 +92,8 @@ const viewAll = (sql) => {
   });
 };
 
-//for the create db queries (create deparment/role/employee)
+//done
+//for the create and update db queries (create deparment/role/employee, update employee)
 const createRows = (sql, params) => {
   db.query(sql, params, (err, result) => {
     if (err) {
@@ -269,7 +278,7 @@ const createEmployee = () => {
     });
 };
 
-//TODO: the whole thing
+//low priority bug: Stall question in inquirer. Wasn't able to get TA code working.
 const updateEmployee = () => {
   //query for employees then insert into prompt
   const employeeArray = [];
@@ -281,8 +290,8 @@ const updateEmployee = () => {
     }
     rows.forEach((employee) => {
       employeeArray.push(`${employee.first_name} ${employee.last_name}`);
-    })
-    console.log(employeeArray);
+    });
+    // console.log(employeeArray);
   });
 
   //query for roles then insert into prompt
@@ -301,9 +310,10 @@ const updateEmployee = () => {
   inquirer
     .prompt([
       {
-        type: "confirm",
+        type: "list",
         name: "stall",
-        message: "Do you want to update an employee?",
+        message: "Let's update an employee. (Press 'Enter')",
+        choices: ["Let's do it."],
       },
       {
         type: "list",
